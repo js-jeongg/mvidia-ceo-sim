@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1a1424">
+<title>mVIDIA CEO Simulator</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<!-- desktop backdrop only: neon sign on the office wall (text = playerCompany, filled by ui.js) -->
+<div class="neonsign" id="neon" aria-hidden="true"></div>
+<div class="stage">
+<!-- the tacky gold "secret second phone" case (desktop ≥ 620px; on phones the case collapses and the screen is the page) -->
+<div class="case"><main id="app" class="phone"></main></div>
+<!-- desktop only (≥ 900px wide): live stock terminal + Johnson's facecam beside the phone -->
+<div class="side">
+<aside id="ticker" class="stockwin" aria-label="mVIDIA stock"></aside>
+<aside id="cam" class="facecam" aria-label="Johnson Jang reaction cam"></aside>
+</div>
+</div>
+<noscript><p style="padding:20px;color:#fff">This game needs JavaScript.</p></noscript>
+<!-- content (edit this one) -->
+<script src="data.js"></script>
+<!-- pure logic, no DOM -->
+<script src="game.js"></script>
+<!-- all rendering + input (swap this + style.css for a new layout) -->
+<script src="ui.js"></script>
+</body>
+</html>
