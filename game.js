@@ -268,7 +268,8 @@
 
     s.summary = {
       day: day, before: before, after: clone(s.gauges), counts: cnt, citations: citations,
-      headlines: buildHeadlines(events, s, data, day), over: s.over
+      headlines: buildHeadlines(events, s, data, day), over: s.over,
+      trumpCall: events.some(function (event) { return event.kind === 'trumpCall'; })
     };
     s.phase = 'summary';
     return s;

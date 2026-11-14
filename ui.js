@@ -343,7 +343,7 @@
     h += '<div class="tbtns">';
     if (saved && saved.phase !== 'title') h += '<button class="btn ok" data-act="resume">' + esc(t('resume', { day: saved.day })) + '</button>';
     h += '<button class="btn' + (saved ? '' : ' ok') + '" data-act="new">' + esc(saved ? (view.restartArmed ? U.restartConfirm : U.restart) : U.start) + '</button></div>';
-    h += '<p class="disclaimer">' + esc(U.disclaimer) + ' <button class="linkbtn" data-act="credits">' + esc(U.credits) + '</button></p></div>';
+    h += '<p class="disclaimer">' + esc(U.disclaimer) + '</p></div>';
     return h + '</section>';
   }
 
@@ -366,7 +366,7 @@
     var h = '<section class="screen desk">' + statusBarHtml(state.clock, t('left', { n: L.remaining(state, D) })) + gaugesHtml(state) + rulesBarHtml(state.day);
     h += '<div class="req enter" id="req" data-src="' + esc(slug(src)) + '"><div class="skin"><span class="skin-l">' + skin + '</span><span class="count">' + (state.idx + 1) + ' / ' + q.length + '</span></div>';
     h += '<div class="body">' + faceHtml(c) + '<div class="who"><strong>' + esc(c.profile.name) + '<span class="age">, ' + esc(c.profile.age) + '</span></strong>' +
-      '<span class="intro-line">' + (c.nationality ? esc(c.nationality) + ' · ' : '') + esc(c.profile.intro) + '</span>' + chatHtml(c) + '</div></div></div>';
+      '<span class="nationality">' + esc(U.nationalityLabel) + ': ' + esc(c.nationality || U.nationalityUnknown) + '</span><span class="intro-line">' + esc(c.profile.intro) + '</span>' + chatHtml(c) + '</div></div></div>';
     h += docsHtml(c, state.day);
     h += '<div class="btns duo">' + replyHtml() + '<button class="btn no" data-act="decline"><i class="ico" aria-hidden="true"></i>' + esc(U.reject) + '</button>' +
       ceoHtml(currentMood(), 'ceo-btn react') +
@@ -408,6 +408,7 @@
     var h = '<section class="screen news">' + statusBarHtml(L.clockOf(D).end, '');
     h += '<div class="nbody"><div class="newshead"><div class="tv">' + ceoHtml(summaryMood(sm), 'ceo-mini react') + '<span class="onair">' + esc(sk('skinLive', 'LIVE')) + '</span></div>' +
       '<div class="nh-txt"><p class="kicker">' + esc(t('eveningNews', { day: sm.day })) + '</p><p class="nh-date">' + esc(info.label) + '</p></div></div>';
+    if (sm.trumpCall) h += '<aside class="president-call" aria-label="' + esc(U.trumpCaller) + '"><span class="kicker">' + esc(U.trumpCaller) + '</span><b>' + esc(U.trumpName) + '</b><p>' + esc(U.trumpLine) + '</p><small>' + esc(U.trumpImpact) + '</small></aside>';
     sm.headlines.forEach(function (x, i) {
       h += i ? '<div class="hl sm">' + esc(x) + '</div>'
         : '<div class="hl lead"><span class="tag">' + esc(sk('skinBreaking', 'BREAKING')) + '</span><span class="hl-t">' + esc(x) + '</span></div>';
@@ -481,11 +482,12 @@
     var peak = L.priceOf(state.peakStock, D);
     h += '<div class="hl"><b>' + esc(D.ceoName) + ' EQUITY: $' + (wealth / 1e9).toFixed(2) + 'B</b><br>' + (gain >= 0 ? '+' : '-') + '$' + (Math.abs(gain) / 1e9).toFixed(2) + 'B FROM YOUR DATES<br>Peak $' + Math.round(peak) + ' · Final $' + Math.round(finalPrice) + '<br><small>Simulated · ' + (shares / 1e6) + 'M fictional shares · Not actual net worth</small></div>';
     h += '<p class="endstats">' + esc(t('endingStats', st)) + '</p>';
+    if (e.id === 'dnd' && D.art.declineVideo) h += '<details class="meme-replay"><summary>' + esc(U.declineVideoLabel) + '</summary><video controls playsinline preload="none" src="' + esc(D.art.declineVideo) + '"></video></details>';
     var dn = D.donate || {};
     h += '<p class="donate"><b>' + esc(dn.title) + ':</b> ' + esc((dn.tiers || []).join(' / ')) + ' — ' +
       (dn.url ? '<a href="' + esc(dn.url) + '" target="_blank" rel="noopener">itch.io</a>' : '<span class="muted">' + esc(dn.pending) + '</span>') + '</p>';
     h += '<div class="fill"></div><div class="btns one"><button class="btn ok" data-act="replay">' + esc(U.replay) + '</button></div>';
-    h += '<p class="footline">' + esc(U.creditsLine) + ' <button class="linkbtn" data-act="credits">' + esc(U.credits) + '</button> · ' + esc(t('seed', { seed: state.seed })) + '</p>';
+    h += '<p class="footline">' + esc(t('seed', { seed: state.seed })) + '</p>';
     return h + '</div></section>';
   }
 

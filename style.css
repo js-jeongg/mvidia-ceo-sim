@@ -409,6 +409,7 @@ a { color: inherit; }
   repeating-linear-gradient(0deg, rgba(255,255,255,.022) 0 1px, transparent 1px 3px),
   radial-gradient(110% 50% at 50% 0%, rgba(43,33,64,1), transparent 70%), var(--night); }
 .nbody, .ebody { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 4px 12px 6px; }
+.nbody > :not(.fill), .ebody > :not(.fill) { flex-shrink: 0; }
 .newshead { display: flex; gap: 12px; align-items: center; }
 .tv { position: relative; flex: none; padding: 4px; background: #0e0e10; border: 2.5px solid var(--ink); border-radius: 13px; box-shadow: inset 0 0 0 2px #3c3c44, 0 3px 0 #000; }
 .ceo-mini { --s: 62px; border-radius: 9px; }
@@ -573,6 +574,15 @@ a { color: inherit; }
 .crash-box svg { display: block; width: 100%; height: auto; margin-top: 6px; }
 .crash-line { fill: none; stroke: var(--tred); stroke-width: 4; stroke-linejoin: round; stroke-linecap: round; filter: drop-shadow(0 0 4px rgba(255,59,78,.9));
   stroke-dasharray: 260; stroke-dashoffset: 0; animation: draw 1.2s ease-in both; }
+
+.nationality { display: block; font: 700 10px/1.25 var(--f-ui); color: #55415f; margin: 2px 0; }
+.meme-replay { padding: 10px; border: 2px solid var(--ink); border-radius: 12px; background: #23182f; color: #fff8e7; }
+.meme-replay summary { cursor: pointer; font: 700 12px/1.4 var(--f-ui); }
+.meme-replay video { display: block; width: 100%; max-height: 280px; margin-top: 8px; border-radius: 8px; }
+.president-call { display: grid; gap: 5px; padding: 12px; margin: 8px 0; border: 2px solid #f2bf59; border-radius: 14px; color: #fff8e7; background: linear-gradient(135deg, #302044, #10131e); box-shadow: 0 0 18px #f2bf5930; }
+.president-call b { font: 800 23px/1.1 var(--f-ui); }
+.president-call p { font: 14px/1.35 var(--f-ui); margin: 3px 0; }
+.president-call small { color: #f2bf59; font: 9px/1.4 var(--f-mono); }
 
 /* ================= motion (CSS only: slide / fade / shake / bounce) ================= */
 .enter { animation: slidein .22s ease-out; }
