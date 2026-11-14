@@ -42,7 +42,7 @@
     return String(tpl).replace(/\{(\w+)\}/g, function (m, k) { return vars && vars[k] != null ? vars[k] : m; });
   }
   function toMinutes(hhmm) { var p = String(hhmm).split(':'); return (+p[0]) * 60 + (+p[1] || 0); }
-  function fmtClock(min) { var h = Math.floor(min / 60), m = min % 60; return (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m; }
+  function fmtClock(min) { min = Math.floor(min); var h = Math.floor(min / 60), m = min % 60; return (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m; }
   function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
   function addEffects(acc, eff, times) {
     if (!eff) return acc;
@@ -169,11 +169,11 @@
     return s.idx < q.length ? candidateById(data, q[s.idx]) : null;
   }
   function remaining(s, data) { return Math.max(0, dayQueue(s.seed, data, s.day).length - s.idx); }
-  function openOrSettle(s, data) {
+  function openOrSettle(s, data, realtime) {
     var q = dayQueue(s.seed, data, s.day), k = clockOf(data);
     if (s.idx >= q.length) return settleDay(s, data);
     var c = candidateById(data, q[s.idx]);
-    if (s.clock + reviewCost(c, data) > k.end) {
+    if (s.clock >= k.end || (!realtime && s.clock + reviewCost(c, data) > k.end)) {
       for (var i = s.idx; i < q.length; i++) s.decisions.push({ id: q[i], day: s.day, accept: null, expired: true, violations: [] });
       s.idx = q.length;
       return settleDay(s, data);
@@ -185,14 +185,41 @@
     s.phase = 'desk'; s.idx = 0; s.clock = clockOf(data).start; s.summary = null;
     return openOrSettle(s, data);
   }
-  function decide(state, data, accept) {
+  function decide(state, data, accept, realtime) {
     var s = clone(state), c = current(s, data), k = clockOf(data);
     if (!c) return s;
     s.decisions.push({ id: c.id, day: s.day, accept: !!accept, violations: violations(c, data, s.day) });
-    s.clock += reviewCost(c, data) + (accept ? k.accept : k.reject);
+    s.clock += (realtime ? 0 : reviewCost(c, data)) + (accept ? k.accept : k.reject);
+    s.decisions[s.decisions.length - 1].clock = s.clock;
     s.idx++;
     s.peakStock = Math.max(s.peakStock, intraday(s, data).live);
-    return openOrSettle(s, data);
+    return openOrSettle(s, data, realtime);
+  }
+
+  function tick(state, data, minutes) {
+    if (state.phase !== 'desk' || minutes <= 0) return state;
+    var s = clone(state), end = clockOf(data).end;
+    s.clock = Math.min(end, s.clock + minutes);
+    return openOrSettle(s, data, true);
+  }
+
+  function inspectionResult(c, data, day, accept) {
+    var broken = violations(c, data, day);
+    return { correct: !!accept === (broken.length === 0), rules: broken };
+  }
+
+  function inspectionStats(s, data, day) {
+    var score = 0, correct = 0, total = 0, streak = 0, best = 0;
+    s.decisions.forEach(function (d) {
+      if (day != null && d.day !== day) return;
+      if (d.expired) { streak = 0; return; }
+      total++;
+      if (inspectionResult(candidateById(data, d.id), data, d.day, d.accept).correct) {
+        correct++; streak++; best = Math.max(best, streak);
+        score += 100 + Math.min(streak - 1, 4) * 25;
+      } else { streak = 0; score = Math.max(0, score - 100); }
+    });
+    return { score: score, correct: correct, total: total, streak: streak, best: best };
   }
 
   function settleDay(s, data) {
@@ -375,7 +402,7 @@
       if (d.day !== s.day || d.expired) return;
       var c = candidateById(data, d.id);
       if (!c) return;
-      t += reviewCost(c, data) + (d.accept ? k.accept : k.reject);
+      t = d.clock;
       if (d.accept) v += effectsOf(c, data).now[sg] || 0;
       points.push({ t: Math.min(t, k.end), v: v, kind: d.accept ? 'accept' : 'decline', id: d.id });
     });
@@ -496,7 +523,7 @@
     contradictions: contradictions, violations: violations, effectsOf: effectsOf,
     clockOf: clockOf, reviewCost: reviewCost, dataSignature: dataSignature,
     newGame: newGame, validateSave: validateSave, beginDay: beginDay, current: current, remaining: remaining,
-    decide: decide, advance: advance, finishKeynote: finishKeynote, settleDay: settleDay,
+    decide: decide, tick: tick, inspectionResult: inspectionResult, inspectionStats: inspectionStats, advance: advance, finishKeynote: finishKeynote, settleDay: settleDay,
     stats: stats, endingContext: endingContext, matchWhen: matchWhen, pickEnding: pickEnding, endingById: endingById,
     priceOf: priceOf, priceLabel: priceLabel, pctChange: pctChange, intraday: intraday, liveValue: liveValue,
     STRATEGIES: STRATEGIES, autoplay: autoplay, validateData: validateData

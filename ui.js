@@ -353,7 +353,7 @@
     h += '<div class="card brief"><i class="clip" aria-hidden="true"></i><p class="kicker">' + esc(t('dayShort', { day: state.day })) + ' · ' + esc(info.label) + '</p>';
     var fresh = L.activeRules(D, state.day).filter(function (r) { return r.day === state.day; });
     if (fresh.length) h += '<p class="kicker2">' + esc(U.newRule) + '</p>' + fresh.map(function (r) { return '<div class="bigchip">' + chipHtml(r, true) + '<p>' + ruleDesc(r) + '</p></div>'; }).join('');
-    h += '<p class="introtext">' + esc(info.intro) + '</p></div>';
+    h += '<p class="introtext">' + esc(info.intro) + '</p><p class="introtext">The clock runs while you inspect. Each date takes 75 minutes. Correct calls build a streak: 100 points, then +25 per step up to 200. Mistakes cost 100 and break the streak. Menu pauses the clock.</p></div>';
     h += '<div class="btns lead">' + ceoHtml(currentMood(), 'ceo-btn react') + '<button class="btn ok" data-act="begin">' + esc(U.beginDay) + '</button></div>';
     return h + '</section>';
   }
@@ -362,12 +362,14 @@
     var c = L.current(state, D);
     if (!c) return screenIntro();
     var q = L.dayQueue(state.seed, D, state.day), src = c.requestSource || 'Chat';
+    var inspection = L.inspectionStats(state, D, state.day);
     var skin = esc(t('skin', { source: '\u0001', day: state.day })).replace('\u0001', '<b class="app">' + esc(src) + '</b>');
     var h = '<section class="screen desk">' + statusBarHtml(state.clock, t('left', { n: L.remaining(state, D) })) + gaugesHtml(state) + rulesBarHtml(state.day);
-    h += '<div class="req enter" id="req" data-src="' + esc(slug(src)) + '"><div class="skin"><span class="skin-l">' + skin + '</span><span class="count">' + (state.idx + 1) + ' / ' + q.length + '</span></div>';
+    h += '<div class="req enter" id="req" data-src="' + esc(slug(src)) + '"><div class="skin"><span class="skin-l">' + skin + '</span><span class="count">' + inspection.score + ' pts · x' + inspection.streak + '</span></div>';
     h += '<div class="body">' + faceHtml(c) + '<div class="who"><strong>' + esc(c.profile.name) + '<span class="age">, ' + esc(c.profile.age) + '</span></strong>' +
       '<span class="nationality">' + esc(U.nationalityLabel) + ': ' + esc(c.nationality || U.nationalityUnknown) + '</span><span class="intro-line">' + esc(c.profile.intro) + '</span>' + chatHtml(c) + '</div></div></div>';
     h += docsHtml(c, state.day);
+    if (view.verdict && performance.now() < view.verdictUntil) h += '<div class="inspection-feedback ' + (view.verdictGood ? 'correct' : 'incorrect') + '" role="status">' + esc(view.verdict) + '</div>';
     h += '<div class="btns duo">' + replyHtml() + '<button class="btn no" data-act="decline"><i class="ico" aria-hidden="true"></i>' + esc(U.reject) + '</button>' +
       ceoHtml(currentMood(), 'ceo-btn react') +
       '<button class="btn ok yes" data-act="accept"><i class="ico" aria-hidden="true"></i>' + esc(U.accept) + '</button></div>';
@@ -414,6 +416,8 @@
         : '<div class="hl lead"><span class="tag">' + esc(sk('skinBreaking', 'BREAKING')) + '</span><span class="hl-t">' + esc(x) + '</span></div>';
     });
     h += deltasHtml(sm.before, sm.after, false);
+    var inspection = L.inspectionStats(state, D, sm.day);
+    h += '<div class="hl stat">Inspection: ' + inspection.correct + ' / ' + inspection.total + ' correct · ' + inspection.score + ' pts · best streak ' + inspection.best + ' · ' + sm.counts.expired + ' unread</div>';
     h += '<div class="hl stat">' + esc(t('todayStats', sm.counts)) + ' / ' + esc(t('missed', { n: sm.citations.length })) + '</div>';
     if (sm.citations.length) {
       h += '<div class="citation shake"><b>' + esc(U.citationTitle) + '</b>' + sm.citations.map(function (ct) {
@@ -600,9 +604,36 @@
 
   function commit(next) {
     state = next;
+    deskTickAt = performance.now();
     save();
     render();
   }
+
+  var deskTickAt = performance.now(), leavingPage = false;
+  window.addEventListener('beforeunload', function () {
+    leavingPage = true;
+    try { if (localStorage.getItem(SAVE_KEY)) save(); } catch (e) {}
+  });
+  function saveExisting() {
+    try { if (localStorage.getItem(SAVE_KEY)) save(); } catch (e) {}
+  }
+  document.addEventListener('visibilitychange', function () {
+    deskTickAt = performance.now();
+    if (document.hidden) saveExisting();
+  });
+  window.addEventListener('pagehide', function () { leavingPage = true; saveExisting(); });
+  window.addEventListener('pageshow', function () { leavingPage = false; deskTickAt = performance.now(); });
+  setInterval(function () {
+    var now = performance.now(), elapsed = now - deskTickAt;
+    deskTickAt = now;
+    if (leavingPage || view.debug || !state || state.phase !== 'desk' || view.busy || view.cut || view.overlay || document.hidden) return;
+    state = L.tick(state, D, elapsed / 250);
+    if (state.phase !== 'desk') { view.verdict = null; save(); render(); return; }
+    var clock = app.querySelector('.sb-time');
+    if (clock) clock.textContent = L.fmtClock(Math.floor(state.clock));
+    var note = app.querySelector('.inspection-feedback');
+    if (note && performance.now() > view.verdictUntil) note.remove();
+  }, 250);
 
   function runKeynote() {
     clearTimers();
@@ -632,7 +663,11 @@
     if (btn) btn.classList.add('pressed');
     later(function () {
       view.busy = false; view.overlay = null;
-      var c = L.current(state, D), before = L.liveValue(state, D, D.stockDisplay.gauge), next = L.decide(state, D, accept);
+      var c = L.current(state, D), before = L.liveValue(state, D, D.stockDisplay.gauge), next = L.decide(state, D, accept, !view.debug);
+      var result = L.inspectionResult(c, D, state.day, accept);
+      view.verdict = result.correct ? 'CLEARED · Correct call' : accept ? 'CITATION · Missed contradiction' : 'MISSED DATE · No rule broken';
+      view.verdictGood = result.correct;
+      view.verdictUntil = performance.now() + 2400;
       // accepted a fake → the decision is saved now, but the next screen waits until the gag cut is over
       if (accept && c && c.disguise) { state = next; save(); showCut(c); return; }
       // reaction face: accepted → smug for a beat; accepted and the stock jumped → happy. Real date → her reply pops up.
