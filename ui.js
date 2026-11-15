@@ -88,6 +88,35 @@
     return '<svg class="spark" viewBox="0 0 60 12" preserveAspectRatio="none" aria-hidden="true"><polyline points="' + pts + '"/></svg>';
   }
 
+  function candleBars(s) {
+    var bars = D.stockHistory.bars.map(function (b) { return { label: b[0], open: b[1], high: b[2], low: b[3], close: b[4], real: true, closed: true }; });
+    L.stockCandles(s, D).forEach(function (b) { bars.push({ label: 'Day ' + b.day + (b.closed ? '' : ' · LIVE'), open: L.priceOf(b.open, D), high: L.priceOf(b.high, D), low: L.priceOf(b.low, D), close: L.priceOf(b.close, D), real: false, closed: b.closed }); });
+    return bars;
+  }
+  function candleChart(s, compact) {
+    var bars = candleBars(s), W = 340, H = compact ? 62 : 180, left = compact ? 2 : 38, top = compact ? 3 : 25, bottom = H - (compact ? 3 : 25);
+    var min = Math.min.apply(null, bars.map(function (b) { return b.low; })), max = Math.max.apply(null, bars.map(function (b) { return b.high; }));
+    var pad = Math.max(3, (max - min) * 0.12); min -= pad; max += pad;
+    var step = (W - left - 8) / (D.stockHistory.bars.length + D.days.length), width = Math.min(12, step - 4);
+    var x = function (i) { return left + (i + 0.5) * step; }, y = function (p) { return top + (max - p) / (max - min) * (bottom - top); };
+    var boundary = left + D.stockHistory.bars.length * step;
+    var h = '<div class="candles' + (compact ? ' compact' : '') + '"><svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="NVDA historical candles followed by simulated MVDA game days">';
+    if (!compact) {
+      [0, 0.5, 1].forEach(function (f) { var price = max - (max - min) * f, yy = y(price); h += '<line class="c-grid" x1="' + left + '" x2="' + (W - 8) + '" y1="' + yy + '" y2="' + yy + '"/><text x="' + (left - 4) + '" y="' + (yy + 3) + '" text-anchor="end">' + Math.round(price) + '</text>'; });
+      h += '<text x="' + left + '" y="13">NVDA · USD</text><text x="' + (boundary + 3) + '" y="13">YOUR RUN</text>';
+      h += '<text x="' + left + '" y="' + (H - 5) + '">10/20–11/04</text><text x="' + (boundary + 3) + '" y="' + (H - 5) + '">D1–D5</text>';
+    }
+    h += '<line class="c-boundary" x1="' + boundary + '" x2="' + boundary + '" y1="' + top + '" y2="' + bottom + '"/>';
+    bars.forEach(function (b, i) {
+      var xx = x(i), up = b.close >= b.open, a = y(b.open), z = y(b.close);
+      var desc = b.label + ' · ' + (b.real ? 'NVDA history' : 'MVDA simulated') + ' · O $' + b.open.toFixed(2) + ' H $' + b.high.toFixed(2) + ' L $' + b.low.toFixed(2) + ' C $' + b.close.toFixed(2);
+      h += '<g class="c-bar ' + (up ? 'c-up' : 'c-down') + (b.real ? ' c-real' : '') + '" tabindex="0" data-candle="' + esc(desc) + '" aria-label="' + esc(desc) + '"><title>' + esc(desc) + '</title><rect class="c-hit" x="' + (xx - step / 2) + '" y="' + top + '" width="' + step + '" height="' + (bottom - top) + '"/><line x1="' + xx + '" x2="' + xx + '" y1="' + y(b.high) + '" y2="' + y(b.low) + '"/><rect class="c-body" x="' + (xx - width / 2) + '" y="' + Math.min(a, z) + '" width="' + width + '" height="' + Math.max(1.5, Math.abs(a - z)) + '"/></g>';
+    });
+    h += '</svg><output class="c-tooltip" aria-live="polite"></output>';
+    if (!compact) h += '<div class="c-note">Hollow green ↑ · Solid red ↓ · After divider: fictional game</div><details class="c-table"><summary>OHLC data · sources</summary><p>NVDA daily USD · America/New_York · split-adjusted OHLC; no dividend adjustment. Yahoo Finance, cross-checked Stock Analysis. MVDA game candles are simulated, not actual NVDA returns.</p><table><thead><tr><th>Day</th><th>Open</th><th>High</th><th>Low</th><th>Close</th></tr></thead><tbody>' + bars.map(function (b) { return '<tr><th>' + esc(b.label) + '</th>' + [b.open, b.high, b.low, b.close].map(function (v) { return '<td>' + v.toFixed(2) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></details>';
+    return h + '</div>';
+  }
+
   function past(th, v) { return !!th && ((th.gte != null && v >= th.gte) || (th.lte != null && v <= th.lte)); }
   // one colour language for every gauge: ok (safe) → mid (careful) → hot (past the gauge's warn line)
   function gaugeLevel(g, v) {
@@ -123,7 +152,7 @@
         var hist = s.history[g.id], p = L.pctChange(hist[0], v, D);
         var line = s.phase === 'desk' ? hist.concat([v]) : hist;
         var bump = view.dv ? ' bump ' + (view.dv > 0 ? 'b-up' : 'b-down') : '';
-        h += '<div class="g trend' + bump + '"><div class="t"><span>' + esc(g.label) + '</span><span class="' + (p < 0 ? 'down' : 'up') + '">' + esc(pctText(p)) + '</span></div>' + sparkline(line) +
+        h += '<div class="g trend' + bump + '"><div class="t"><span>' + esc(g.label) + '</span><span class="' + (p < 0 ? 'down' : 'up') + '">' + esc(pctText(p)) + '</span></div>' + candleChart(s, true) +
           (view.dv ? '<span class="pop ' + (view.dv > 0 ? 'up' : 'down') + '" aria-hidden="true">' + esc(moneyDelta(view.dv)) + '</span>' : '') + '</div>';
       } else {
         // bar length = the number itself (Security 100 = full bar, Suspicion 0 = empty); colour = how dangerous it is
@@ -454,7 +483,7 @@
       '<p class="kline" id="kline">&nbsp;</p>' + ceoHtml('smug', 'ceo-stage') + '<div class="chip-prop" id="chip" aria-hidden="true"><i></i></div><div class="crowd" aria-hidden="true"></div></section>';
   }
 
-  function money(v) { return (D.stockDisplay.prefix || '') + Math.round(L.priceOf(v, D)); }
+  function money(v) { return (D.stockDisplay.prefix || '') + L.priceOf(v, D).toFixed(2); }
 
   // Ending chart. Axis labels live inside the SVG (one per point, so they can't drift from the dots);
   // price labels go on the side of the dot the line doesn't use, so they never sit on the line.
@@ -491,7 +520,7 @@
     var h = '<section class="screen end' + (state.over ? ' caught' : '') + '"><div class="ebody">';
     h += '<div class="endhero">' + ceoHtml(screenMood(), 'ceo-end react') + '<div class="title">' + esc(e.title) + '</div></div>';
     h += '<div class="hl stat">' + esc(t(state.over ? 'endingKickerCaught' : 'endingKicker', { day: state.day })) + '<br><b>' + esc(L.fill(e.line, { ceo: D.ceoName })) + '</b></div>';
-    h += '<div class="graph"><div class="graph-h"><b>' + esc(D.stockDisplay.ticker) + '</b><span>' + esc(money(hist[0])) + ' → ' + esc(money(hist[hist.length - 1])) + '</span></div>' + chartSvg(hist) + '</div>';
+    h += '<div class="graph"><div class="graph-h"><b>' + esc(D.stockDisplay.ticker) + '</b><span>' + esc(money(hist[0])) + ' → ' + esc(money(hist[hist.length - 1])) + '</span></div>' + candleChart(state, false) + '</div>';
     h += deltasHtml(start, state.gauges, true);
     var shares = D.balance.fictionalShares, finalPrice = L.priceOf(state.gauges[sg], D);
     var wealth = finalPrice * shares, gain = (finalPrice - L.priceOf(hist[0], D)) * shares;
@@ -547,9 +576,9 @@
     var p = L.pctChange(d.open, d.live, D), pts = d.points, last = pts[pts.length - 1], prev = pts[pts.length - 2];
     var h = '<div class="bb-top"><i class="fk r"></i><i class="fk y"></i><i class="fk g"></i><b class="bb-sym">' + esc(D.stockDisplay.ticker) + '</b>' +
       '<span class="bb-co">' + esc(D.playerCompany) + '</span><span class="bb-time">' + esc(t('dayShort', { day: s.day }) + ' ' + L.fmtClock(d.now)) + '</span></div>';
-    h += '<div class="bb-px"><div class="px">' + esc(money(d.live)) + '<small>.00</small></div><div class="chg ' + (p < 0 ? 'down' : 'up') + '">' + esc(t('stockToday', { pct: pctText(p) })) + '</div></div>';
-    var chart = stockChartSvg(d);
-    var pop = view.dv ? '<span class="pop ' + (view.dv > 0 ? 'up' : 'down') + '" style="left:' + d.lastAt.x.toFixed(1) + '%;top:' + d.lastAt.y.toFixed(1) + '%">' + esc(moneyDelta(view.dv)) + '</span>' : '';
+    h += '<div class="bb-px"><div class="px">' + esc(money(d.live)) + '</div><div class="chg ' + (p < 0 ? 'down' : 'up') + '">' + esc(t('stockToday', { pct: pctText(p) })) + '</div></div>';
+    var chart = candleChart(s, false);
+    var pop = view.dv ? '<span class="pop ' + (view.dv > 0 ? 'up' : 'down') + '">' + esc(moneyDelta(view.dv)) + '</span>' : '';
     h += '<div class="pchart">' + chart + pop + '</div>';
     var line, c = last.id ? L.candidateById(D, last.id) : null, time = L.fmtClock(last.t);
     if (last.kind === 'open') line = t('stockOpen', { time: time });
@@ -767,6 +796,14 @@
   });
 
   // keys: → / Y = Accept (right button), ← / N = Decline (left button). Holding a key does one step.
+  ['pointerover', 'focusin', 'pointerout', 'focusout'].forEach(function (eventName) {
+    document.addEventListener(eventName, function (ev) {
+      var bar = ev.target.closest && ev.target.closest('[data-candle]');
+      if (!bar) return;
+      var output = bar.closest('.candles').querySelector('.c-tooltip');
+      output.textContent = eventName === 'pointerout' || eventName === 'focusout' ? '' : bar.getAttribute('data-candle');
+    });
+  });
   app.addEventListener('input', function (ev) { if (ev.target.matches('[data-music-volume]')) S.musicVolume(ev.target.value / 100); });
   document.addEventListener('keydown', function (ev) {
     if (ev.target.closest('input, select, textarea')) return;

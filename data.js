@@ -101,7 +101,7 @@
  */
 window.GAME_DATA = {
   lang: "en",
-  version: "0.6.7", // 0.5.1: 4·5일 미끼 + 수락 답장 + 경고선 60 (옛 저장 자동 폐기 — 대기열이 달라진 저장을 이어 붙이면 정산이 꼬임)
+  version: "0.6.8", // 0.5.1: 4·5일 미끼 + 수락 답장 + 경고선 60 (옛 저장 자동 폐기 — 대기열이 달라진 저장을 이어 붙이면 정산이 꼬임)
   ceoName: "Johnson Huang",
   playerCompany: "mVIDIA",
   calendarYear: 2026,
@@ -114,7 +114,26 @@ window.GAME_DATA = {
   gameOverText: {
     suspicion: "Your wife found the phone. You are fired. The stock just crashed."
   },
-  stockDisplay: { gauge: "stock", ticker: "MVDA", prefix: "$", base: 20, perPoint: 4 },
+  stockDisplay: { gauge: "stock", ticker: "MVDA", prefix: "$", base: 0.13, perPoint: 4 },
+  stockHistory: {
+    symbol: "NVDA", through: "2026-11-04", timezone: "America/New_York", currency: "USD",
+    source: "https://finance.yahoo.com/quote/NVDA/history/",
+    crossCheck: "https://stockanalysis.com/stocks/nvda/history/",
+    bars: [
+      ["2026-10-20", 215.98, 218.46, 212.77, 216.47],
+      ["2026-10-21", 220.96, 222.19, 217.66, 221.97],
+      ["2026-10-22", 217.13, 218.88, 211.26, 212.21],
+      ["2026-10-23", 210.99, 213.85, 210.18, 210.96],
+      ["2026-10-26", 213.11, 217.75, 212.61, 216.00],
+      ["2026-10-27", 218.31, 219.19, 215.53, 217.94],
+      ["2026-10-28", 219.92, 219.99, 214.47, 215.38],
+      ["2026-10-29", 214.36, 215.33, 212.08, 213.66],
+      ["2026-10-30", 208.94, 209.06, 200.92, 204.64],
+      ["2026-11-02", 207.53, 209.98, 201.66, 202.06],
+      ["2026-11-03", 207.96, 209.14, 205.93, 206.69],
+      ["2026-11-04", 203.50, 206.79, 199.68, 200.13]
+    ]
+  },
 
   // 540분 하루: 규칙 준수(수락 4·거절 2 + 긴 카드 1장)는 최악 순서에도 17:40까지 끝, 전부 수락은 매일 1명 읽씹 (tools/sim.mjs가 검사)
   // → 날마다 규칙으로 거를 가짜(안드로이드 제외)가 2명 이상 있어야 함(규칙 준수 수락 ≤ 4).
@@ -241,13 +260,13 @@ window.GAME_DATA = {
    *   직업이 스티커를 설명하고, 대사는 수상하게 들리는 Vera 화법. 보고서는 전부 일치 → 규칙대로 읽으면 수락. */
   candidates: [
     // ---------- Day 1: 1번 행(Mutuals) → wife_spy만 등장 ----------
-    { id: "c01", nationality: "American", day: 1, slot: 1, image: "img/faces/painted-c01.webp", requestSource: "Swipr",
+    { id: "c01", nationality: "American", day: 1, image: "img/faces/painted-c01.webp", requestSource: "Swipr",
       profile: { name: "Bree", age: "31", job: "Pottery teacher", hangout: "My studio, covered in clay", knows: "Nobody. I'm new in town.", intro: "I'm good with my hands. Mostly bowls." },
       chat: ["CEO of GPUs. Can't identify a bowl.", "It's giving artificial intelligence."],
       report: { intranet: "", checkin: "Pottery studio", friends: "None. New in town", birth: "Born 1995" },
       disguise: null, effects: { stock: 4 },
       acceptLine: "Vase hallucination accepted. Touch clay, not grass." },
-    { id: "rh1", nationality: "American", day: 1, slot: 2, image: "img/faces/painted-c02.webp", requestSource: "Swipr", clue: "earpiece",
+    { id: "rh1", nationality: "American", day: 1, image: "img/faces/painted-c02.webp", requestSource: "Swipr", clue: "earpiece",
       profile: { name: "Rhonda", age: "44", job: "Pilates coach", hangout: "Private lessons", knows: "New clients, mostly", intro: "One last house call, then I'm free." },
       chat: ["Client cancelled. Her husband works late.", "Your place or mine? I travel light."],
       evidence: { items: [
@@ -398,7 +417,7 @@ window.GAME_DATA = {
       acceptLine: "Jingle at 8. Come outside. Rocky road's on me." },
 
     // ---------- Day 5: 키노트 날, 새 행 없음 (카메오 3명 + 아내 본인 + Rhonda 진짜) ----------
-    { id: "rh5", nationality: "American", day: 5, slot: 1, image: "img/faces/painted-c02.webp", requestSource: "Swipr",
+    { id: "rh5", nationality: "American", day: 5, image: "img/faces/painted-c02.webp", requestSource: "Swipr",
       profile: { name: "Rhonda", age: "44", job: "Unemployed. Truly. Check.", hangout: "Home. Thinking about my choices.", knows: "Nobody. Fresh start.", intro: "No earpiece. No client. No mustache. Just Rhonda." },
       chat: ["Five days. Four jobs. One catastrophic crush.", "No client. No wire. Just raw unemployed rizz."],
       report: { intranet: "", checkin: "Home (thinking)", friends: "None. Fresh start", birth: "Born 1982" },

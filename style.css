@@ -1,6 +1,30 @@
 /* mVIDIA CEO Simulator — skin v1 "gold second phone"
  * Night office + neon (Not Tonight) · cartoon ink outlines (That's Not My Neighbor) · fixer dossier (Orwell)
  * · MVDA terminal (Bloomberg parody) · Johnson's reaction cam. System fonts only (no downloads, itch offline-safe). */
+.candles { position: relative; color: #ddd; background: #080808; font: 10px/1.3 ui-monospace, monospace; }
+.candles svg { display: block; width: 100%; height: auto; }
+.candles text { fill: #ddd; font-size: 9px; }
+.c-grid { stroke: #282828; stroke-width: 1; }
+.c-boundary { stroke: #aaa; stroke-dasharray: 3 3; }
+.c-bar { color: #f87171; outline: none; }
+.c-bar.c-up { color: #4ade80; }
+.c-bar line { stroke: currentColor; stroke-width: 1.5; }
+.c-body { fill: currentColor; stroke: currentColor; stroke-width: 1.5; }
+.c-up .c-body { fill: #080808; }
+.c-real { opacity: .7; }
+.c-hit { fill: transparent; }
+.c-bar:hover, .c-bar:focus { opacity: 1; filter: brightness(1.3); }
+.c-bar:focus .c-hit { stroke: #eee; stroke-width: 1; }
+.c-note { padding: 3px 5px; color: #ccc; font-size: 9px; }
+.c-table { padding: 4px 5px; }
+.c-table table { width: 100%; font-size: 9px; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.c-table th { text-align: left; }
+.c-table td { text-align: right; }
+.c-tooltip { display: none; position: absolute; z-index: 4; left: 0; right: 0; bottom: 0; background: #171717; color: #fff; padding: 5px; pointer-events: none; }
+.c-tooltip:not(:empty) { display: block; }
+.compact { margin-top: 3px; }
+.compact svg { height: 42px; }
+@media (forced-colors: active) { .c-bar { color: CanvasText; } .c-up .c-body { fill: Canvas; } .c-down .c-body { fill: CanvasText; } }
 :root {
   --ink: #1d1a24; --ink2: #3a3446;
   --night: #17121f; --night2: #221a2e; --night3: #2e2440;

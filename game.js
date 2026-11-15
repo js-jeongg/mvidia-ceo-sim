@@ -157,7 +157,7 @@
     return {
       v: 1, sig: dataSignature(data), seed: seed, phase: 'intro', day: data.days[0].day, idx: 0,
       clock: clockOf(data).start, gauges: g, history: hist, pending: [], decisions: [],
-      summary: null, over: null, endingId: null, peakStock: g.stock
+      summary: null, over: null, endingId: null, peakStock: g.stock, candles: []
     };
   }
   function validateSave(s, data) {
@@ -225,6 +225,7 @@
   function settleDay(s, data) {
     var day = s.day, last = lastDay(data), B = data.balance || {};
     var before = clone(s.gauges), delta = {}, events = [], citations = [];
+    var traded = intraday(s, data);
     var cnt = { accepted: 0, rejected: 0, expired: 0 };
 
     // effects scheduled yesterday (e.g. insider probe)
@@ -293,6 +294,8 @@
       if (dv >= 5) events.push({ kind: 'stockUp' }); else if (dv <= -5) events.push({ kind: 'stockDown' });
     }
 
+    var prices = traded.points.map(function (p) { return p.v; }).concat([s.gauges[sg]]);
+    s.candles.push({ day: day, open: traded.open, high: Math.max.apply(null, prices), low: Math.min.apply(null, prices), close: s.gauges[sg], closed: true });
     s.summary = {
       day: day, before: before, after: clone(s.gauges), counts: cnt, citations: citations,
       headlines: buildHeadlines(events, s, data, day), over: s.over,
@@ -410,6 +413,14 @@
     var last = points[points.length - 1];
     return { gauge: sg, open: open, live: last.v, now: settled ? k.end : Math.min(s.clock, k.end), start: k.start, end: k.end, closed: settled, points: points };
   }
+  function stockCandles(s, data) {
+    var bars = s.candles.slice();
+    if (s.phase === 'desk') {
+      var d = intraday(s, data), values = d.points.map(function (p) { return p.v; });
+      bars.push({ day: s.day, open: d.open, high: Math.max.apply(null, values), low: Math.min.apply(null, values), close: d.live, closed: false });
+    }
+    return bars;
+  }
   /** gauge value as the player should see it right now (stock moves intraday on the desk). */
   function liveValue(s, data, id) {
     if (s && s.phase === 'desk' && id === (data.stockDisplay || {}).gauge) { var d = intraday(s, data); if (d) return d.live; }
@@ -525,7 +536,7 @@
     newGame: newGame, validateSave: validateSave, beginDay: beginDay, current: current, remaining: remaining,
     decide: decide, tick: tick, inspectionResult: inspectionResult, inspectionStats: inspectionStats, advance: advance, finishKeynote: finishKeynote, settleDay: settleDay,
     stats: stats, endingContext: endingContext, matchWhen: matchWhen, pickEnding: pickEnding, endingById: endingById,
-    priceOf: priceOf, priceLabel: priceLabel, pctChange: pctChange, intraday: intraday, liveValue: liveValue,
+    priceOf: priceOf, priceLabel: priceLabel, pctChange: pctChange, intraday: intraday, stockCandles: stockCandles, liveValue: liveValue,
     STRATEGIES: STRATEGIES, autoplay: autoplay, validateData: validateData
   };
   root.MVLogic = api;
