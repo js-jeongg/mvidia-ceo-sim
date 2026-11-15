@@ -101,7 +101,7 @@
  */
 window.GAME_DATA = {
   lang: "en",
-  version: "0.6.3", // 0.5.1: 4·5일 미끼 + 수락 답장 + 경고선 60 (옛 저장 자동 폐기 — 대기열이 달라진 저장을 이어 붙이면 정산이 꼬임)
+  version: "0.6.4", // 0.5.1: 4·5일 미끼 + 수락 답장 + 경고선 60 (옛 저장 자동 폐기 — 대기열이 달라진 저장을 이어 붙이면 정산이 꼬임)
   ceoName: "Johnson Huang",
   playerCompany: "mVIDIA",
   calendarYear: 2026,
@@ -180,7 +180,7 @@ window.GAME_DATA = {
     list: [
       {
         id: 1, day: 1, chip: "Mutuals check",
-        desc: "Mutuals vs the fixer's Mutual friend. If your wife shows up there, who sent her?",
+        desc: "Keep dates outside your wife's circle. Connect photos and messages when available; otherwise check the fixer's mutuals. An earpiece alone proves nothing.",
         profileLabel: "Mutuals", profileField: "knows",
         reportLabel: "Mutual friend", reportField: "friends", emptyText: "None",
         check: { type: "matches", field: "report.friends", pattern: "wife", flags: "i" },
@@ -222,7 +222,7 @@ window.GAME_DATA = {
 
   days: [
     { day: 1, date: "2026-11-16", label: "Mon, Nov 16",
-      intro: "Johnson's second phone folds. Closed: his wife's photo. Open: Swipr. A fixer staples a report to every match. Today only row 1 is open." },
+      intro: "Your second phone has Swipr. Your first has messages from home. Keep those worlds apart. Some matches have photos and messages instead of a fixer report. Connect the details; don't reject someone just for looking suspicious." },
     { day: 2, date: "2026-11-17", label: "Tue, Nov 17",
       intro: "Overnight, mVIDIA Robotics reported \"a few units missing.\" Row 2 is open." },
     { day: 3, date: "2026-11-18", label: "Wed, Nov 18",
@@ -248,21 +248,33 @@ window.GAME_DATA = {
       disguise: null, effects: { stock: 4 },
       acceptLine: "Vase hallucination accepted. Touch clay, not grass." },
     { id: "rh1", nationality: "American", day: 1, slot: 2, image: "img/faces/painted-c02.webp", requestSource: "Swipr", clue: "earpiece",
-      profile: { name: "Rhonda", age: "44", job: "Pilates coach", hangout: "Pilates. Normal places.", knows: "Nobody. Never met your wife.", intro: "Just a normal single woman. Very normal. Hello." },
-      chat: ["POV: a normal woman. No wire. Trust.", "Your wife sent— the universe sent me."],
+      profile: { name: "Rhonda", age: "44", job: "Pilates coach", hangout: "Private lessons", knows: "New clients, mostly", intro: "One last house call, then I'm free." },
+      chat: ["Client cancelled. Her husband works late.", "Your place or mine? I travel light."],
+      evidence: { items: [
+        { source: "Rhonda · sent photo", scene: "living", text: "Last appointment. Finally a client with taste." },
+        { source: "Wife · message", scene: "living", text: "New Pilates teacher's here. She loves that duck lamp you hate. Don't work too late." }
+      ], explanation: "Same green sofa. Same duck lamp. Her last client is your wife. Your other phone almost became a household appliance." },
       report: { intranet: "", checkin: "Pilates studio", friends: "Your Wife", birth: "Born 1982" },
       disguise: "wife_spy", effects: {},
       news: {
         accept: "Wife's private eye lands a date with the CEO in four minutes. Bills three hours",
         reject: "Wife's PI \"Rhonda\" blows her cover in one swipe. Vows: \"Tomorrow. New look.\"" } },
     { id: "c03", nationality: "Chinese", day: 1, image: "img/faces/painted-c03.webp", requestSource: "Swipr", clue: "weddingRing",
-      profile: { name: "Tiff", age: "36", job: "Interior designer", hangout: "Furniture showrooms", knows: "Total stranger. Zero overlap.", intro: "Show me your bedroom. For the curtains." },
-      chat: ["Your couch has negative aura. Let me cook.", "Your wife picked it. I have the receipts."],
+      profile: { name: "Tiff", age: "36", job: "Interior designer", hangout: "Furniture showrooms", knows: "Clients. Never ask surnames.", intro: "Off duty. No more beige billionaires." },
+      chat: ["Dinner at eight? My seven o'clock is a nightmare.", "She wants her husband's jacket framed. Help."],
+      evidence: { items: [
+        { source: "Tiff · appointment note", text: "19:00 · Pick up leather jacket for framing. Client insists on the grease stain. 20:00 · Finally, dinner." },
+        { source: "Wife · message", text: "Leave your keynote jacket out. The designer's collecting it at seven. Yes, even the grease stain. It's history." }
+      ], explanation: "Seven o'clock. Leather jacket. That grease stain. Her nightmare client is your wife. Your date comes with free home delivery." },
       report: { intranet: "", checkin: "Showroom", friends: "Your wife (BFF)", birth: "Born 1990" },
       disguise: "wife_spy", effects: {} },
     { id: "c04", nationality: "Canadian", day: 1, image: "img/faces/painted-c04.webp", requestSource: "Swipr", clue: "earpiece",
       profile: { name: "Vera", age: "35", job: "Court interpreter", hangout: "Courthouses, sadly", knows: "Your barber, Gus", intro: "I can tell when men lie. In four languages." },
-      chat: ["Gus leaked your lore during a haircut.", "CEO aura. NPC height. Still would."],
+      chat: ["Taking this earpiece out. Eight hours of men lying.", "Dinner? Please don't make me translate."],
+      evidence: { items: [
+        { source: "Vera · work photo", scene: "court", text: "County courtroom. Interpreter booth. The earpiece is court property. Unlike the gossip." },
+        { source: "Gus · barber message", text: "Gave your number to Vera, the court interpreter. She asked if you had hobbies. I said jackets." }
+      ], explanation: "The earpiece belongs to an interpreter booth. Gus made the introduction. Suspicious accessory, ordinary explanation. You almost rejected someone for having a job." },
       report: { intranet: "", checkin: "County courthouse", friends: "Your barber (Gus)", birth: "Born 1991" },
       disguise: null, effects: { stock: 5, suspicion: 3 },
       acceptLine: "Gus said you'd say yes. He also said you'd be taller." },

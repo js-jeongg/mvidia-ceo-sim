@@ -165,7 +165,15 @@
     }).join('');
   }
 
+  function sceneHtml(scene) {
+    if (scene === 'living') return '<svg viewBox="0 0 320 110" role="img" aria-label="Illustration: green sofa beside a yellow duck lamp"><rect width="320" height="110" fill="#c3afa0"/><path d="M0 85H320V110H0" fill="#745e50"/><rect x="30" y="49" width="182" height="45" rx="8" fill="#355e4b"/><rect x="42" y="35" width="73" height="39" rx="8" fill="#49745b"/><rect x="119" y="35" width="79" height="39" rx="8" fill="#49745b"/><path d="M258 60V94M238 95H279" stroke="#594231" stroke-width="5"/><ellipse cx="258" cy="46" rx="23" ry="15" fill="#efca56"/><circle cx="274" cy="29" r="13" fill="#efca56"/><path d="M284 28L302 34L284 37" fill="#dc793c"/><circle cx="277" cy="26" r="2" fill="#302923"/></svg>';
+    return '<svg viewBox="0 0 320 110" role="img" aria-label="Illustration: courtroom interpreter booth and headset"><rect width="320" height="110" fill="#b3b4ac"/><path d="M10 85H310V110H10" fill="#775c46"/><rect x="30" y="12" width="122" height="68" fill="#829ea0" stroke="#e0d8c5" stroke-width="5"/><path d="M91 12V80M30 46H152" stroke="#e0d8c5" stroke-width="4"/><path d="M199 65V45A26 26 0 0 1 251 45V65" fill="none" stroke="#323b40" stroke-width="8"/><rect x="190" y="51" width="13" height="26" rx="5" fill="#323b40"/><rect x="247" y="51" width="13" height="26" rx="5" fill="#323b40"/><path d="M255 72Q255 88 231 86" fill="none" stroke="#323b40" stroke-width="4"/></svg>';
+  }
+
   function docsHtml(c, day) {
+    if (c.evidence) return '<div class="evidence-pack" aria-label="Messages and photos">' + c.evidence.items.map(function (item) {
+      return '<article class="evidence-item"><strong>' + esc(item.source) + '</strong>' + (item.scene ? sceneHtml(item.scene) : '') + '<p>' + esc(item.text) + '</p></article>';
+    }).join('') + '</div>';
     var h = '<div class="docs"><div class="h h0"></div><div class="h d1"><span>' + esc(U.profile) + '</span></div><div class="h d3"><span class="stamp">' + esc(U.report) + '</span></div>';
     L.rulesList(D).forEach(function (r) {
       // locked row = redacted (keeps its height, so the grid never jumps when a row unlocks)
@@ -179,6 +187,7 @@
   }
 
   function overlayHtml() {
+    if (view.overlay === 'evidence') return '<div class="overlay"><div class="sheet evidence-result" role="dialog" aria-modal="true" aria-label="What connected"><h2>' + esc(view.verdict) + '</h2><p>' + esc(view.evidenceExplanation) + '</p><button class="btn ok" data-act="close">Continue</button></div></div>';
     if (view.overlay === 'menu') {
       return '<div class="overlay" data-act="close"><div class="sheet" data-stop="1">' +
         '<p class="muted">' + esc(t('seed', { seed: state ? state.seed : '-' })) + '</p>' +
@@ -655,7 +664,7 @@
 
   /* ---------------- input ---------------- */
   function decideNow(accept) {
-    if (view.busy || !state || state.phase !== 'desk') return;
+    if (view.busy || view.overlay || !state || state.phase !== 'desk') return;
     view.busy = true;
     var card = document.getElementById('req'), docs = app.querySelector('.docs'), btn = app.querySelector('[data-act="' + (accept ? 'accept' : 'decline') + '"]');
     if (card) card.classList.add(accept ? 'out-accept' : 'out-decline');
@@ -668,6 +677,15 @@
       view.verdict = result.correct ? 'CLEARED · Correct call' : accept ? 'CITATION · Missed contradiction' : 'MISSED DATE · No rule broken';
       view.verdictGood = result.correct;
       view.verdictUntil = performance.now() + 2400;
+      if (c && c.evidence) {
+        view.evidenceExplanation = c.evidence.explanation;
+        view.evidenceCut = accept && c.disguise ? c : null;
+        view.overlay = 'evidence';
+        view.verdictUntil = 0;
+        clearReply();
+        commit(next);
+        return;
+      }
       // accepted a fake → the decision is saved now, but the next screen waits until the gag cut is over
       if (accept && c && c.disguise) { state = next; save(); showCut(c); return; }
       // reaction face: accepted → smug for a beat; accepted and the stock jumped → happy. Real date → her reply pops up.
@@ -718,7 +736,12 @@
       case 'rules': view.overlay = view.overlay === 'rules' ? null : 'rules'; render(); break;
       case 'menu': view.overlay = 'menu'; view.restartArmed = false; render(); break;
       case 'credits': view.overlay = 'credits'; render(); break;
-      case 'close': view.overlay = null; view.restartArmed = false; render(); break;
+      case 'close':
+        var evidenceCut = view.overlay === 'evidence' ? view.evidenceCut : null;
+        view.evidenceCut = null; view.overlay = null; view.restartArmed = false;
+        render();
+        if (evidenceCut) showCut(evidenceCut);
+        break;
       case 'restart': armRestart(); break;
     }
   });

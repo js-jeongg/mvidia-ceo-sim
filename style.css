@@ -19,6 +19,13 @@
   --wob: 14px 19px 12px 17px / 17px 12px 19px 14px; /* hand-drawn wobbly corners */
   --face: clamp(64px, 16dvh, 136px);
 }
+.evidence-pack { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 8px; overflow-y: auto; min-height: 0; flex: 1 1 auto; color: var(--ink); }
+.evidence-item { background: var(--cream); border: 1px solid var(--ink2); border-radius: 8px; padding: 9px; min-width: 0; }
+.evidence-item strong { display: block; font-size: 11px; margin-bottom: 5px; }
+.evidence-item svg { display: block; width: 100%; border-radius: 4px; margin-bottom: 6px; }
+.evidence-item p { font-size: 12px; line-height: 1.4; }
+.evidence-result p { line-height: 1.6; margin: 14px 0; }
+@media (max-width: 420px) { .evidence-pack { gap: 5px; padding: 6px; } .evidence-item { padding: 7px; } .evidence-item p { font-size: 11px; } }
 * { box-sizing: border-box; margin: 0; }
 html, body { height: 100%; }
 body {
