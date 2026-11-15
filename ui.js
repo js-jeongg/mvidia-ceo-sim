@@ -597,7 +597,7 @@
       : phase === 'keynote' ? screenKeynote()
       : screenEnding();
     app.innerHTML = html + (html.indexOf('data-act="sound"') < 0 ? '<div class="ending-sound">' + soundButton() + '</div>' : '') + musicControls() + overlayHtml();
-    S.musicActive(['intro', 'desk', 'summary'].indexOf(phase) >= 0 && !view.overlay && !view.cut);
+    S.musicActive(['intro', 'desk', 'summary'].indexOf(phase) >= 0 && view.overlay !== 'menu' && view.overlay !== 'credits' && !view.cut);
     if (view.lastPhase === phase && app.firstElementChild) app.firstElementChild.classList.add('same'); // screen fade only on phase change
     view.lastPhase = phase;
     // new screen under the pointer (phase change, next card, cut closed onto the next card) → start the input guard

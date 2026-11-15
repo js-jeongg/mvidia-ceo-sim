@@ -101,7 +101,7 @@
  */
 window.GAME_DATA = {
   lang: "en",
-  version: "0.6.6", // 0.5.1: 4·5일 미끼 + 수락 답장 + 경고선 60 (옛 저장 자동 폐기 — 대기열이 달라진 저장을 이어 붙이면 정산이 꼬임)
+  version: "0.6.7", // 0.5.1: 4·5일 미끼 + 수락 답장 + 경고선 60 (옛 저장 자동 폐기 — 대기열이 달라진 저장을 이어 붙이면 정산이 꼬임)
   ceoName: "Johnson Huang",
   playerCompany: "mVIDIA",
   calendarYear: 2026,
