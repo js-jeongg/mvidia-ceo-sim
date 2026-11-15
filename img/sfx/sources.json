@@ -1,0 +1,11 @@
+{
+  "processed": "Mono MP3, shortened with fade-out, loudness normalized to -20 LUFS / -3 dBTP.",
+  "clips": {
+    "drop.mp3": { "source": "https://www.bluezone-corporation.com/blog/original-vine-boom-sound-effect", "original": "Bluezone-Cimpact-sound-001.wav", "terms": "Source permits free worldwide use within games/commercial projects; no standalone redistribution, resale or sound-library use. Included only as an embedded game effect." },
+    "cash.mp3": { "source": "https://commons.wikimedia.org/wiki/File:Cash_register.ogg", "terms": "Public domain per file description." },
+    "wrong.mp3": { "source": "https://bigsoundbank.com/vinyl-scratch-13-s2870.html", "terms": "CC0 per source." },
+    "ring.mp3": { "source": "https://bigsoundbank.com/fixed-telephone-ring-3-s0252.html", "terms": "CC0 per source." },
+    "fail.mp3": { "source": "https://opengameart.org/content/total-fail", "terms": "CC0 per source." }
+  },
+  "excluded": "Myinstants bruh and metal pipe downloads retained outside game; redistribution license unknown."
+}

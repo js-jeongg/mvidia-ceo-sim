@@ -9,7 +9,7 @@
  */
 (function () {
   'use strict';
-  var D = window.GAME_DATA, L = window.MVLogic, U = D.ui;
+  var D = window.GAME_DATA, L = window.MVLogic, U = D.ui, S = window.MVSfx;
   var SAVE_KEY = 'mvidia-ceo-sim/save/v1';
   var app = document.getElementById('app');
   var stockEl = document.getElementById('ticker'); // desktop stock window (optional)
@@ -101,14 +101,14 @@
   }
 
   // phone status bar: the in-game clock IS the phone clock; "n left" rides next to it; battery drains through the day
+  function soundButton() { return '<button class="sound-toggle" data-act="sound" aria-label="Sound" aria-pressed="' + S.enabled() + '">SFX ' + (S.enabled() ? 'ON' : 'OFF') + '</button>'; }
   function statusBarHtml(clockMin, leftText) {
     var k = L.clockOf(D), frac = 1 - Math.max(0, Math.min(1, (clockMin - k.start) / ((k.end - k.start) || 1))) * 0.85;
     var b = Math.round(frac * 100);
     return '<div class="statusbar"><span class="sb-time">' + esc(L.fmtClock(clockMin)) + '</span>' +
       (leftText ? '<span class="sb-left">' + esc(leftText) + '</span>' : '') +
       '<i class="island" aria-hidden="true"><i></i></i>' +
-      '<span class="sb-icons" aria-hidden="true"><i class="sig"><i></i><i></i><i></i><i></i></i>' +
-      '<i class="batt' + (b <= 25 ? ' low' : '') + '"><i style="width:' + b + '%"></i></i></span></div>';
+      soundButton() + '</div>';
   }
 
   function moneyDelta(dv) { var sd = D.stockDisplay; return (dv > 0 ? '+' : '−') + (sd.prefix || '') + Math.abs(Math.round(dv * (sd.perPoint == null ? 1 : sd.perPoint))); }
@@ -187,10 +187,10 @@
   }
 
   function overlayHtml() {
-    if (view.overlay === 'evidence') return '<div class="overlay"><div class="sheet evidence-result" role="dialog" aria-modal="true" aria-label="What connected"><h2>' + esc(view.verdict) + '</h2><p>' + esc(view.evidenceExplanation) + '</p><button class="btn ok" data-act="close">Continue</button></div></div>';
+    if (view.overlay === 'evidence') return '<div class="overlay"><div class="sheet evidence-result" role="dialog" aria-modal="true" aria-label="What connected">' + soundButton() + '<h2>' + esc(view.verdict) + '</h2><p>' + esc(view.evidenceExplanation) + '</p><button class="btn ok" data-act="close">Continue</button></div></div>';
     if (view.overlay === 'menu') {
       return '<div class="overlay" data-act="close"><div class="sheet" data-stop="1">' +
-        '<p class="muted">' + esc(t('seed', { seed: state ? state.seed : '-' })) + '</p>' +
+        soundButton() + '<p class="muted">' + esc(t('seed', { seed: state ? state.seed : '-' })) + '</p>' +
         '<button class="btn" data-act="credits">' + esc(U.credits) + '</button>' +
         '<button class="btn danger" data-act="restart">' + esc(view.restartArmed ? U.restartConfirm : U.restart) + '</button>' +
         '<button class="btn ok" data-act="close">' + esc(U.close) + '</button></div></div>';
@@ -283,11 +283,12 @@
   }
   function cutHtml(cut, c) {
     return '<div class="cut fx-' + esc(cut.effect) + '" data-act="cutclose" role="alertdialog" aria-label="' + esc(cut.stamp) + '"><div class="cut-scrim"></div>' + cutSceneHtml(cut, c) +
-      '<div class="cut-band"><p class="cut-stamp">' + esc(cut.stamp) + '</p>' + (cut.line ? '<p class="cut-line">' + esc(cut.line) + '</p>' : '') + '</div>' +
+      '<div class="cut-band">' + soundButton() + '<p class="cut-stamp">' + esc(cut.stamp) + '</p>' + (cut.line ? '<p class="cut-line">' + esc(cut.line) + '</p>' : '') + '</div>' +
       ceoHtml('shocked', 'ceo-cut react') + '</div>';
   }
   function showCut(c, disguise) {
     var cut = failCut(disguise || c.disguise);
+    S.play(cut.effect === 'wifeCall' ? 'ring' : 'drop');
     clearReply(); // a reply still floating from the previous real date never sits under the gag
     view.busy = true;
     view.cut = { guard: Date.now() + CUT_GUARD_MS };
@@ -593,7 +594,7 @@
       : phase === 'summary' ? screenNews()
       : phase === 'keynote' ? screenKeynote()
       : screenEnding();
-    app.innerHTML = html + overlayHtml();
+    app.innerHTML = html + (html.indexOf('data-act="sound"') < 0 ? '<div class="ending-sound">' + soundButton() + '</div>' : '') + overlayHtml();
     if (view.lastPhase === phase && app.firstElementChild) app.firstElementChild.classList.add('same'); // screen fade only on phase change
     view.lastPhase = phase;
     // new screen under the pointer (phase change, next card, cut closed onto the next card) → start the input guard
@@ -612,6 +613,11 @@
   }
 
   function commit(next) {
+    var previousPhase = state && state.phase;
+    if (next.phase !== previousPhase) {
+      if (next.phase === 'summary') S.play(next.summary && next.summary.trumpCall ? 'ring' : 'notify');
+      else if (next.phase === 'ending') S.play(next.over ? 'fail' : 'win');
+    }
     state = next;
     deskTickAt = performance.now();
     save();
@@ -674,6 +680,7 @@
       view.busy = false; view.overlay = null;
       var c = L.current(state, D), before = L.liveValue(state, D, D.stockDisplay.gauge), next = L.decide(state, D, accept, !view.debug);
       var result = L.inspectionResult(c, D, state.day, accept);
+      S.play(result.correct ? (accept ? 'cash' : 'bonk') : 'wrong');
       view.verdict = result.correct ? 'CLEARED · Correct call' : accept ? 'CITATION · Missed contradiction' : 'MISSED DATE · No rule broken';
       view.verdictGood = result.correct;
       view.verdictUntil = performance.now() + 2400;
@@ -723,12 +730,17 @@
     if (ev.target.closest('[data-stop]') && el.classList.contains('overlay')) return; // taps inside the sheet don't close it
     if (el.tagName === 'A') return;
     var act = el.getAttribute('data-act');
+    if (act === 'sound') {
+      var soundOn = S.toggle(ev);
+      app.querySelectorAll('[data-act="sound"]').forEach(function (button) { button.setAttribute('aria-pressed', String(soundOn)); button.textContent = 'SFX ' + (soundOn ? 'ON' : 'OFF'); });
+      return;
+    }
     if (view.cut) { if (act === 'cutclose') endCut(); return; }
     if (GUARDED[act] && Date.now() - view.shownAt < INPUT_GUARD_MS) return;
     switch (act) {
       case 'new': if (loadSave()) armRestart(); else newGame(); break;
       case 'resume': state = loadSave(); view.overlay = null; render(); break;
-      case 'begin': commit(L.beginDay(state, D)); break;
+      case 'begin': commit(L.beginDay(state, D)); S.play('notify'); break;
       case 'accept': decideNow(true); break;
       case 'decline': decideNow(false); break;
       case 'advance': commit(L.advance(state, D)); break;
@@ -756,7 +768,7 @@
       if (ev.key === 'ArrowRight' || k === 'y') decideNow(true);
       else if (ev.key === 'ArrowLeft' || k === 'n') decideNow(false);
     } else if (ev.key === 'Enter' && !ev.target.closest('button')) {
-      if (state.phase === 'intro') commit(L.beginDay(state, D));
+      if (state.phase === 'intro') { commit(L.beginDay(state, D)); S.play('notify'); }
       else if (state.phase === 'summary') commit(L.advance(state, D));
     }
   });
