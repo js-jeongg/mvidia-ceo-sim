@@ -9,6 +9,31 @@
         .then(function (data) { return ctx.decodeAudioData(data); }).then(function (buffer) { buffers[cue] = buffer; }).catch(function () {});
     });
   }
+  var recordingMode = new URLSearchParams(window.location.search).get('bgm') === 'off';
+  var music = new window.Audio(), musicReady = false, musicActive = false, musicLeaving = false;
+  if (!recordingMode) music.src = 'img/bgm/too-powerful.mp3';
+  var musicKey = 'mvidia-ceo-sim/music/v1', musicVolume = 0.2, musicEnabled = true;
+  try {
+    var setting = JSON.parse(localStorage.getItem(musicKey) || 'null');
+    if (setting) { musicEnabled = setting.enabled !== false; if (Number.isFinite(setting.volume)) musicVolume = Math.max(0, Math.min(1, setting.volume)); }
+  } catch (e) {}
+  music.loop = true; music.preload = 'metadata'; music.volume = musicVolume;
+  function syncMusic() {
+    var videoPlaying = Array.prototype.some.call(document.querySelectorAll('video'), function (v) { return !v.paused && !v.ended; });
+    if (!musicReady || !musicActive || recordingMode || !musicEnabled || !musicVolume || document.hidden || musicLeaving || videoPlaying) { music.pause(); return; }
+    if (music.paused) music.play().catch(function () {});
+  }
+  function saveMusic() {
+    try { localStorage.setItem(musicKey, JSON.stringify({ enabled: musicEnabled, volume: musicVolume })); } catch (e) {}
+    music.volume = musicVolume; syncMusic();
+  }
+  function unlockMusic(ev) { if (ev.isTrusted) { musicReady = true; syncMusic(); } }
+  document.addEventListener('pointerdown', unlockMusic, true);
+  document.addEventListener('keydown', unlockMusic, true);
+  document.addEventListener('visibilitychange', syncMusic);
+  window.addEventListener('pagehide', function () { musicLeaving = true; syncMusic(); });
+  window.addEventListener('pageshow', function () { musicLeaving = false; syncMusic(); });
+  ['play', 'pause', 'ended'].forEach(function (event) { document.addEventListener(event, function (ev) { if (ev.target.tagName === 'VIDEO') syncMusic(); }, true); });
   var key = 'mvidia-ceo-sim/sound/v1';
   try { enabled = localStorage.getItem(key) !== 'off'; } catch (e) {}
   function stop() {
@@ -80,5 +105,11 @@
   });
   window.addEventListener('pagehide', stop);
   document.addEventListener('play', function (ev) { if (ev.target.tagName === 'VIDEO') ev.target.muted = !enabled || document.hidden; }, true);
-  window.MVSfx = { play: play, stop: stop, toggle: toggle, enabled: function () { return enabled; } };
+  window.MVSfx = { play: play, stop: stop, toggle: toggle, enabled: function () { return enabled; },
+    musicActive: function (active) { musicActive = active; syncMusic(); },
+    musicToggle: function (ev) { musicEnabled = !musicEnabled; if (ev && ev.isTrusted) musicReady = true; saveMusic(); return musicEnabled; },
+    musicVolume: function (value) { if (value !== undefined) { musicVolume = Math.max(0, Math.min(1, Number(value))); saveMusic(); } return musicVolume; },
+    musicEnabled: function () { return musicEnabled && !recordingMode; },
+    recordingMode: function () { return recordingMode; }
+  };
 })();

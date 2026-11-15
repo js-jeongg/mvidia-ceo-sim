@@ -101,7 +101,8 @@
   }
 
   // phone status bar: the in-game clock IS the phone clock; "n left" rides next to it; battery drains through the day
-  function soundButton() { return '<button class="sound-toggle" data-act="sound" aria-label="Sound" aria-pressed="' + S.enabled() + '">SFX ' + (S.enabled() ? 'ON' : 'OFF') + '</button>'; }
+  function soundButton() { return '<button class="sound-toggle" data-act="sound" aria-label="Sound effects" aria-pressed="' + S.enabled() + '">SFX ' + (S.enabled() ? 'ON' : 'OFF') + '</button>'; }
+  function musicControls() { if (S.recordingMode()) return '<div class="music-controls"><span class="sound-toggle">RECORDING · BGM OFF</span></div>'; return '<div class="music-controls"><button class="sound-toggle" data-act="music" aria-label="Background music" aria-pressed="' + S.musicEnabled() + '">BGM ' + (S.musicEnabled() ? 'ON' : 'OFF') + '</button><label>VOL <input data-music-volume type="range" min="0" max="100" value="' + Math.round(S.musicVolume() * 100) + '" aria-label="Music volume"></label></div>'; }
   function statusBarHtml(clockMin, leftText) {
     var k = L.clockOf(D), frac = 1 - Math.max(0, Math.min(1, (clockMin - k.start) / ((k.end - k.start) || 1))) * 0.85;
     var b = Math.round(frac * 100);
@@ -292,6 +293,7 @@
     clearReply(); // a reply still floating from the previous real date never sits under the gag
     view.busy = true;
     view.cut = { guard: Date.now() + CUT_GUARD_MS };
+    S.musicActive(false);
     clearTimeout(view.reactTimer); view.react = 'shocked';
     app.insertAdjacentHTML('beforeend', cutHtml(cut, c));
     app.parentNode.classList.add('quake', cut.effect === 'wifeCall' ? 'buzz' : 'thud');
@@ -594,7 +596,8 @@
       : phase === 'summary' ? screenNews()
       : phase === 'keynote' ? screenKeynote()
       : screenEnding();
-    app.innerHTML = html + (html.indexOf('data-act="sound"') < 0 ? '<div class="ending-sound">' + soundButton() + '</div>' : '') + overlayHtml();
+    app.innerHTML = html + (html.indexOf('data-act="sound"') < 0 ? '<div class="ending-sound">' + soundButton() + '</div>' : '') + musicControls() + overlayHtml();
+    S.musicActive(['intro', 'desk', 'summary'].indexOf(phase) >= 0 && !view.overlay && !view.cut);
     if (view.lastPhase === phase && app.firstElementChild) app.firstElementChild.classList.add('same'); // screen fade only on phase change
     view.lastPhase = phase;
     // new screen under the pointer (phase change, next card, cut closed onto the next card) → start the input guard
@@ -730,6 +733,11 @@
     if (ev.target.closest('[data-stop]') && el.classList.contains('overlay')) return; // taps inside the sheet don't close it
     if (el.tagName === 'A') return;
     var act = el.getAttribute('data-act');
+    if (act === 'music') {
+      var musicOn = S.musicToggle(ev);
+      el.setAttribute('aria-pressed', String(musicOn)); el.textContent = 'BGM ' + (musicOn ? 'ON' : 'OFF');
+      return;
+    }
     if (act === 'sound') {
       var soundOn = S.toggle(ev);
       app.querySelectorAll('[data-act="sound"]').forEach(function (button) { button.setAttribute('aria-pressed', String(soundOn)); button.textContent = 'SFX ' + (soundOn ? 'ON' : 'OFF'); });
@@ -759,7 +767,9 @@
   });
 
   // keys: → / Y = Accept (right button), ← / N = Decline (left button). Holding a key does one step.
+  app.addEventListener('input', function (ev) { if (ev.target.matches('[data-music-volume]')) S.musicVolume(ev.target.value / 100); });
   document.addEventListener('keydown', function (ev) {
+    if (ev.target.closest('input, select, textarea')) return;
     if (ev.repeat) return;
     if (view.cut) { if (ev.key === 'Escape' || ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); endCut(); } return; }
     if (!state || view.overlay) { if (ev.key === 'Escape' && view.overlay) { view.overlay = null; render(); } return; }
