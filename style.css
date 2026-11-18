@@ -411,6 +411,7 @@ a { color: inherit; }
   radial-gradient(90% 40% at 50% 34%, rgba(255,46,136,.35), transparent 70%),
   radial-gradient(120% 50% at 50% 0%, rgba(138,43,226,.4), transparent 70%), var(--night); }
 .tbody { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; align-items: stretch; gap: 12px; padding: 4px 16px 0; }
+.tbody > :not(.fill) { flex-shrink: 0; }
 .brand { text-align: center; }
 .brand h1 { font: 400 34px/.98 var(--f-meme); text-transform: uppercase; letter-spacing: .015em; color: var(--cream);
   text-shadow: 3px 3px 0 #000, 0 0 24px rgba(255,46,136,.55); }
@@ -430,8 +431,10 @@ a { color: inherit; }
 
 /* ================= day intro (fixer briefing) ================= */
 .card.brief { position: relative; margin: auto 12px; padding: 18px 15px 15px; display: flex; flex-direction: column; gap: 9px; color: var(--ink);
+  min-height: 0; overflow-y: auto;
   background: repeating-linear-gradient(180deg, transparent 0 21px, rgba(120,95,40,.12) 21px 22px), var(--paper);
   border: 2.5px solid var(--ink); border-radius: var(--wob); box-shadow: 0 5px 0 #000; transform: rotate(-.6deg); }
+.card.brief > * { flex-shrink: 0; }
 .clip { position: absolute; top: -14px; right: 28px; width: 15px; height: 42px; border: 3px solid #b8bec7; border-radius: 9px; transform: rotate(8deg); box-shadow: 1px 1px 0 var(--ink); }
 .clip::after { content: ''; position: absolute; left: 2px; right: 2px; top: 6px; bottom: 9px; border: 2.5px solid #b8bec7; border-top: 0; border-radius: 0 0 6px 6px; }
 .kicker { font: 700 16px/1.2 var(--f-type); }
@@ -536,6 +539,8 @@ a { color: inherit; }
 
 /* ================= overlays (menu / credits) ================= */
 .overlay { position: absolute; inset: 0; z-index: 10; background: rgba(10,6,16,.62); display: flex; align-items: flex-end; animation: fade .15s; }
+.sheet { max-height: 100%; overflow-y: auto; }
+.sheet > * { flex-shrink: 0; }
 .sheet { width: 100%; background: var(--night2); color: var(--cream); border-top: 3px solid var(--pink); border-radius: 22px 22px 0 0;
   padding: 18px 14px calc(16px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 12px; animation: up .2s ease-out; box-shadow: 0 -10px 40px rgba(255,46,136,.25); }
 .credits { padding-left: 18px; line-height: 1.6; }
@@ -672,6 +677,10 @@ a { color: inherit; }
   .ceo-btn, .ceo-cut { display: none; }     /* Johnson lives in the reaction cam here */
   .btns.duo { grid-template-columns: 1fr 1fr; }
   .btns.lead { grid-template-columns: 1fr; }
+}
+
+@media (max-height: 599px) {
+  .phone { min-height: 600px; }
 }
 
 /* ================= short screens: tighten ================= */
